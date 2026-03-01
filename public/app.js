@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════
-   IT LITIGATION MANAGER v2 — FRONTEND APP
-   Part 1: Core, Dashboard, Clients
+   IT LITIGATION MANAGER v3 — FRONTEND APP
+   Core, Dashboard, Clients, PDF AI Extraction
 ═══════════════════════════════════════════ */
 
 const API = '';
@@ -8,6 +8,7 @@ let currentPage = 'dashboard';
 let confirmCallback = null;
 let allStaff = [];
 let allClients = [];
+let extractedPdfFilename = null; // stores filename from AI PDF extraction
 
 // ─── ROUTING ─────────────────────────────────
 function showPage(page) {
@@ -359,7 +360,15 @@ async function openNoticeModal() {
   document.getElementById('n-priority').value = 'Medium';
   document.getElementById('notice-modal-title').textContent = 'Add Notice';
   document.getElementById('notice-explanation-box').style.display = 'none';
-  document.getElementById('notice-file-preview').innerHTML = '';
+  document.getElementById('notice-file-preview').textContent = 'No file uploaded yet';
+  // Reset PDF extraction state
+  extractedPdfFilename = null;
+  const statusEl = document.getElementById('pdf-extract-status');
+  if (statusEl) { statusEl.style.display = 'none'; statusEl.innerHTML = ''; }
+  const pdfZone = document.getElementById('pdf-extract-zone');
+  if (pdfZone) pdfZone.style.display = 'block';
+  const pdfInput = document.getElementById('pdf-ai-input');
+  if (pdfInput) pdfInput.value = '';
   openModal('notice-modal-overlay');
 }
 
@@ -383,6 +392,11 @@ async function editNotice(id) {
   document.getElementById('n-desc').value = n.description||'';
   document.getElementById('n-remarks').value = n.remarks||'';
   document.getElementById('notice-modal-title').textContent = 'Edit Notice';
+  // Hide PDF extract zone when editing (already has a file)
+  const pdfZone = document.getElementById('pdf-extract-zone');
+  if (pdfZone) pdfZone.style.display = 'none';
+  document.getElementById('notice-file-preview').textContent = n.notice_file ? `📄 ${n.notice_file}` : 'No file attached';
+  extractedPdfFilename = n.notice_file || null;
   openModal('notice-modal-overlay');
 }
 
@@ -409,6 +423,59 @@ async function onNoticeTypeChange() {
   }
 }
 
+// ─── PDF AI EXTRACTION ──────────────────────────────────
+async function uploadAndExtractPDF(input) {
+  if (!input.files[0]) return;
+  const statusEl = document.getElementById('pdf-extract-status');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:12px;background:rgba(59,130,246,0.08);border-radius:8px;border:1px solid rgba(59,130,246,0.2)"><div class="loading" style="width:16px;height:16px;border-width:2px"></div><span style="font-size:13px;color:var(--accent1)">Uploading PDF and extracting details with AI...</span></div>';
+  try {
+    const fd = new FormData();
+    fd.append('notice_pdf', input.files[0]);
+    const res = await fetch('/api/notices/upload-pdf', { method: 'POST', body: fd });
+    const r = await res.json();
+    if (!r.success) throw new Error(r.message || 'Upload failed');
+    extractedPdfFilename = r.filename;
+    document.getElementById('notice-file-preview').innerHTML = `<span style="color:var(--accent1)">✅ PDF uploaded: ${r.filename}</span>`;
+    if (r.extracted) {
+      const e = r.extracted;
+      // Auto-fill form fields from AI extraction
+      if (e.section) document.getElementById('n-section').value = e.section;
+      if (e.assessment_year) {
+        const ayEl = document.getElementById('n-ay');
+        for (const opt of ayEl.options) { if (opt.value === e.assessment_year) { ayEl.value = e.assessment_year; break; } }
+      }
+      if (e.notice_date) document.getElementById('n-date').value = e.notice_date;
+      if (e.due_date) document.getElementById('n-due').value = e.due_date;
+      if (e.din) document.getElementById('n-din').value = e.din;
+      if (e.issuing_authority) document.getElementById('n-authority').value = e.issuing_authority;
+      if (e.main_issue) document.getElementById('n-desc').value = e.main_issue;
+      // Auto-select notice type if section identified
+      if (e.notice_type) {
+        const typeEl = document.getElementById('n-type');
+        for (const opt of typeEl.options) {
+          if (opt.value && opt.value.toLowerCase().includes((e.section||'').toLowerCase())) {
+            typeEl.value = opt.value; break;
+          }
+        }
+        if (!typeEl.value) { typeEl.options[0].text = e.notice_type; }
+      }
+      const aiUsed = r.ai_used;
+      statusEl.innerHTML = `<div style="padding:12px;background:rgba(${aiUsed?'16,185,129':'245,158,11'},0.1);border-radius:8px;border:1px solid rgba(${aiUsed?'16,185,129':'245,158,11'},0.3)">
+        <div style="font-weight:600;margin-bottom:6px;color:var(--${aiUsed?'success':'accent2'})">${aiUsed?'🤖 AI extracted notice details':'📋 Basic extraction done'} — Please review and confirm below</div>
+        ${e.section?`<div style="font-size:12px;color:var(--text3)">Section: <strong>${e.section}</strong></div>`:''}  
+        ${e.assessment_year?`<div style="font-size:12px;color:var(--text3)">AY: <strong>${e.assessment_year}</strong></div>`:''}
+        ${e.due_date?`<div style="font-size:12px;color:var(--text3)">Due Date: <strong style="color:var(--danger)">${e.due_date}</strong></div>`:''}
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">${r.message}</div>
+      </div>`;
+    } else {
+      statusEl.innerHTML = `<div style="padding:12px;background:rgba(245,158,11,0.1);border-radius:8px;border:1px solid rgba(245,158,11,0.3);font-size:13px">${r.message}</div>`;
+    }
+  } catch(err) {
+    statusEl.innerHTML = `<div style="padding:12px;background:rgba(239,68,68,0.1);border-radius:8px;font-size:13px;color:var(--danger)">❌ ${err.message || 'Upload failed — please fill fields manually'}</div>`;
+  }
+}
+
 async function saveNotice() {
   const id = document.getElementById('notice-id').value;
   const fd = new FormData();
@@ -416,11 +483,13 @@ async function saveNotice() {
     notice_date:'n-date',due_date:'n-due',din:'n-din',issuing_authority:'n-authority',
     status:'n-status',priority:'n-priority',assigned_to:'n-assigned',description:'n-desc',remarks:'n-remarks'};
   for (const [k,v] of Object.entries(fields)) fd.append(k, document.getElementById(v)?.value||'');
-  const file = document.getElementById('n-file');
-  if (file?.files[0]) fd.append('notice_file', file.files[0]);
+  // Use already-extracted PDF filename (no re-upload needed)
+  if (extractedPdfFilename && !id) {
+    fd.append('extracted_filename', extractedPdfFilename);
+  }
   if (!fd.get('client_id')||!fd.get('notice_type')) return toast('Client and Notice Type are required','error');
   const r = await api(id?`/api/notices/${id}`:'/api/notices', { method: id?'PUT':'POST', body: fd });
-  if (r.success) { toast(id?'Notice updated':'Notice added'); closeModal('notice-modal-overlay'); loadNotices(); }
+  if (r.success) { toast(id?'Notice updated':'Notice added'); closeModal('notice-modal-overlay'); loadNotices(); extractedPdfFilename = null; }
   else toast(r.message||'Error saving notice','error');
 }
 

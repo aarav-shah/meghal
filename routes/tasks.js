@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
   if (status) { sql += ' AND t.status=?'; params.push(status); }
   if (assigned_to_id) { sql += ' AND t.assigned_to_id=?'; params.push(assigned_to_id); }
   if (client_id) { sql += ' AND t.client_id=?'; params.push(client_id); }
-  sql += ' ORDER BY CASE t.priority WHEN "High" THEN 1 WHEN "Medium" THEN 2 ELSE 3 END, t.due_date ASC';
+  sql += " ORDER BY CASE t.priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 ELSE 3 END, t.due_date ASC";
   const tasks = db.prepare(sql).all(...params);
   // Add overdue flag
   const today = new Date().toISOString().split('T')[0];

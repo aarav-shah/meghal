@@ -41,9 +41,22 @@ router.post('/generate', upload.array('supporting_docs', 10), async (req, res) =
   const settings = db.prepare("SELECT key, value FROM settings").all().reduce((a,r) => { a[r.key]=r.value; return a; }, {});
   const today = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric' });
 
-  const prompt = `You are an expert Chartered Accountant and Income Tax Advocate with 20+ years of experience in Income Tax litigation in India. Draft a formal, professional, legally sound reply to the following Income Tax notice, suitable for submission to the Income Tax Department.
+  const prompt = `You are a Senior Chartered Accountant and Income Tax Advocate with 20+ years of experience in Indian Income Tax litigation. You have appeared before the ITAT, High Courts, and have deep knowledge of Income Tax Act 1961, CBDT Circulars, and landmark case laws from Taxmann and TaxGuru.
 
-OFFICE LETTERHEAD:
+TASK: Draft a complete, formal, legally-sound reply to the Income Tax notice below. The reply must be ready to submit to the Income Tax Department without any editing.
+
+━━━ CRITICAL INSTRUCTION ━━━
+The user has provided some notes (facts, explanation, provisions). These are RAW NOTES — NOT final text.
+Your job is to:
+1. ANALYSE these notes to understand the legal position
+2. IDENTIFY the strongest legal defenses applicable
+3. BUILD well-structured legal arguments using the Income Tax Act, Rules, CBDT Circulars
+4. CITE 2-3 specific landmark case laws (with court, year, citation) that support the taxpayer's position
+5. Use FORMAL legal language throughout — never sound casual or informal
+6. NEVER copy the user's raw notes verbatim — always convert them into polished legal arguments
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OFFICE DETAILS (for letterhead):
 Firm: ${settings.office_name || 'CA Firm'}
 Address: ${settings.office_address || ''}
 CA Membership No.: ${settings.ca_membership || ''}
@@ -52,69 +65,108 @@ Date: ${today}
 CLIENT DETAILS:
 Name: ${notice.client_name}
 PAN: ${notice.pan}
-Address: ${notice.client_address || 'As per records'}
-Assessment Year: ${notice.assessment_year || 'Not specified'}
+Address: ${notice.client_address || 'As per records on income tax portal'}
+Assessment Year: ${notice.assessment_year || 'As per notice'}
 
-NOTICE DETAILS:
+NOTICE UNDER REPLY:
 Type: ${notice.notice_type}
-Section: ${notice.section || 'Not specified'}
+Section: ${notice.section || 'As per notice'}
 DIN/Reference: ${notice.din || 'As per notice'}
 Notice Date: ${notice.notice_date || 'As per notice'}
-Due Date: ${notice.due_date}
+Due Date for Reply: ${notice.due_date}
 Issuing Authority: ${notice.issuing_authority || 'The Assessing Officer'}
+Notice Summary: ${notice.description || 'Income Tax notice requiring written response'}
 
-FACTS OF THE CASE:
-${facts || 'Our client has been regularly filing returns and complying with all statutory requirements under the Income Tax Act, 1961.'}
+USER'S RAW NOTES (use as context ONLY — do not copy verbatim):
+--- Facts of the Case (from user) ---
+${facts || '[No facts provided — build from notice context]'}
 
-CLIENT'S EXPLANATION:
-${client_explanation || 'Client has maintained proper books of accounts and all relevant documents in support of the income/transactions under consideration.'}
+--- User's Client Explanation (raw) ---
+${client_explanation || '[None provided]'}
 
-LEGAL PROVISIONS TO CITE:
-${legal_provisions || 'Income Tax Act, 1961 — relevant sections as applicable to the notice'}
+--- Provisions/Cases to Emphasize (hints only) ---
+${legal_provisions || '[None specified — use the most relevant ones from standard litigation practice]'}
 
-ADDITIONAL REMARKS:
-${additional_remarks || 'None'}
+--- Special Instructions ---
+${additional_remarks || '[None]'}
 
-INCOME TAX LAW REFERENCE (from built-in legal library):
-${libContext || 'As per Income Tax Act, 1961 and Income Tax Rules, 1962'}
+INCOME TAX LAW REFERENCE (from built-in legal library — use where relevant):
+${libContext || 'Refer to Income Tax Act, 1961 and applicable CBDT Circulars'}
 
-INSTRUCTIONS FOR DRAFTING:
-1. Start with proper letterhead format (use office details above)
-2. Address "To, The Assessing Officer/Authority, [As per notice details]"
-3. Subject line: "Reply to Notice u/s ${notice.section || notice.notice_type} — A.Y. ${notice.assessment_year} — PAN: ${notice.pan}"
-4. Reference: "Your Notice dated ${notice.notice_date || 'date as per notice'}, DIN: ${notice.din || 'as applicable'}"
-5. Salutation: "Respected Sir/Madam,"
-6. Background and facts (numbered paragraph)
-7. Client's submission (numbered paragraph)
-8. Legal position with specific WORKING CITATIONS from landmark cases — Supreme Court, High Court, ITAT (cite case name, year, court, ITR citation)
-9. CBDT circulars and notifications if applicable
-10. Specific prayer/relief sought
-11. List of enclosures
-12. Signature block: "Yours faithfully, For ${settings.office_name || 'CA Firm'}, CA Membership No. ${settings.ca_membership || ''}"
-13. Use formal legal language. Do NOT use placeholder text like [Insert] or [Add here].
-14. The reply should be comprehensive, professionally drafted, and ready to submit.
+━━━ REPLY FORMAT ━━━
+Structure the reply as follows:
 
-Draft the complete, ready-to-use reply now:`;
+[LETTERHEAD]
+Firm name, address, membership no., date
+
+To,
+[Designation of issuing officer]
+[Department details]
+
+Subject: Reply to Notice u/s ${notice.section || notice.notice_type} — A.Y. ${notice.assessment_year} — PAN: ${notice.pan}
+
+Reference: Your Notice dated ${notice.notice_date || 'date as per notice'}, DIN: ${notice.din || 'as per notice'}
+
+Respected Sir/Madam,
+
+1. BRIEF BACKGROUND
+[2-3 sentences establishing client's compliance history and the notice context]
+
+2. FACTS OF THE CASE
+[Well-articulated legal narrative based on user's facts — formal language, not copy-paste]
+
+3. LEGAL SUBMISSIONS
+[Core legal argument with specific section references]
+[Cite specific CBDT Circulars with number and date if applicable]
+
+4. CASE LAWS IN SUPPORT
+[Cite 2-3 relevant Supreme Court / High Court / ITAT judgments with full citation:
+Format: Case Name v. Respondent [Year] ITR/Taxmann citation (Court)]
+
+5. PRAYER
+[Clear prayer for relief — dropping of notice, deletion of addition, no penalty, etc.]
+
+6. ENCLOSURES
+[List of documents to be attached]
+
+Yours faithfully,
+For ${settings.office_name || 'CA Firm'}
+CA Membership No.: ${settings.ca_membership || ''}
+━━━━━━━━━━━━━━━━
+
+Now draft the COMPLETE, READY-TO-SUBMIT reply:`;
+
 
   try {
     let generatedReply = '';
-    const aiProvider = settings.ai_provider || 'gemini';
-    const apiKey = aiProvider === 'openai' ? (settings.openai_api_key || process.env.OPENAI_API_KEY) : (settings.gemini_api_key || process.env.GEMINI_API_KEY);
+    const aiProvider = (settings.ai_provider || process.env.AI_PROVIDER || 'gemini').toLowerCase();
+    const apiKey = aiProvider === 'openai'
+      ? (settings.openai_api_key || process.env.OPENAI_API_KEY)
+      : (settings.gemini_api_key || process.env.GEMINI_API_KEY);
     const hasKey = apiKey && apiKey.length > 10 && !apiKey.includes('your_');
 
     if (hasKey) {
-      const fetch = require('node-fetch');
       if (aiProvider === 'gemini') {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.3, maxOutputTokens: 4096 } })
+        // ── Gemini via @google/genai SDK ────────────────────────────────
+        const { GoogleGenAI } = require('@google/genai');
+        const ai = new GoogleGenAI({ apiKey });
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
         });
-        const data = await response.json();
-        generatedReply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        generatedReply = (response.text || '').trim();
       } else {
+        // ── OpenAI via node-fetch ────────────────────────────────────────
+        const fetch = require('node-fetch');
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-          body: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: prompt }], max_tokens: 4000, temperature: 0.3 })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 5000,
+            temperature: 0.2
+          })
         });
         const data = await response.json();
         generatedReply = data.choices?.[0]?.message?.content || '';
@@ -129,6 +181,7 @@ Draft the complete, ready-to-use reply now:`;
       .run(notice_id, client_id, version, facts, legal_provisions, client_explanation, additional_remarks, generatedReply, 'Draft');
 
     res.json({ success: true, id: r.lastInsertRowid, version, reply: generatedReply, ai_used: hasKey, message: hasKey ? `Reply generated with ${aiProvider} AI` : 'Reply generated from template (add API key in Settings for AI-powered replies)' });
+
   } catch (e) {
     console.error('Reply generation error:', e.message);
     const fallback = generateFallback(notice, settings, facts, client_explanation, legal_provisions);
