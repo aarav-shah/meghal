@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IT Litigation Manager v2 | CA Office</title>
+<meta name="description" content="Income Tax Litigation Management System v2 for Chartered Accountants" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">⚖️</div>
+    <div class="logo-text">
+      <div class="logo-title">IT Litigation</div>
+      <div class="logo-sub">CA Office Manager v2</div>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" data-page="dashboard"> <span class="nav-icon">🏠</span> Dashboard <span class="nav-badge" id="nav-overdue-badge" style="display:none"></span> </div>
+
+    <div class="nav-section">Clients & Notices</div>
+    <div class="nav-item" data-page="clients"> <span class="nav-icon">👥</span> Clients </div>
+    <div class="nav-item" data-page="notices"> <span class="nav-icon">📋</span> Notice Tracker </div>
+    <div class="nav-item" data-page="reply-generator"> <span class="nav-icon">✍️</span> Reply Generator </div>
+    <div class="nav-item" data-page="documents"> <span class="nav-icon">📁</span> Documents </div>
+
+    <div class="nav-section">Firm Management</div>
+    <div class="nav-item" data-page="tasks"> <span class="nav-icon">✅</span> Task Allocation <span class="nav-badge" id="nav-tasks-badge" style="display:none"></span> </div>
+    <div class="nav-item" data-page="staff"> <span class="nav-icon">🧑‍💼</span> Staff </div>
+    <div class="nav-item" data-page="hearings"> <span class="nav-icon">🗓️</span> Hearings </div>
+
+    <div class="nav-section">Reference</div>
+    <div class="nav-item" data-page="library"> <span class="nav-icon">📚</span> IT Law Library </div>
+    <div class="nav-item" data-page="penalties"> <span class="nav-icon">⚠️</span> Penalty Reference </div>
+
+    <div class="nav-section">System</div>
+    <div class="nav-item" data-page="settings"> <span class="nav-icon">⚙️</span> Settings </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="version">IT Litigation Manager v2.0</div>
+    <div class="version" id="sidebar-office-name" style="font-size:10px;opacity:0.5"></div>
+  </div>
+</nav>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<div id="main">
+  <div class="topbar">
+    <button id="sidebar-toggle" class="btn btn-icon btn-sm" onclick="toggleSidebar()">☰</button>
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-actions">
+      <button class="btn btn-gold btn-sm" onclick="showPage('notices'); setTimeout(openNoticeModal,100)">+ Add Notice</button>
+      <button class="btn btn-outline btn-sm" onclick="showPage('clients'); setTimeout(openClientModal,100)">+ Add Client</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>📊 Dashboard</h1>
+          <p id="dash-subtitle">Loading overview...</p>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" onclick="loadDashboard()">🔄 Refresh</button>
+          <a class="btn btn-outline btn-sm" href="/api/export/notices/excel" download>⬇️ Export Notices</a>
+        </div>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card blue"><div class="stat-icon">👥</div><div class="stat-value" id="stat-clients">—</div><div class="stat-label">Total Clients</div></div>
+        <div class="stat-card gold"><div class="stat-icon">📋</div><div class="stat-value" id="stat-notices">—</div><div class="stat-label">Total Notices</div></div>
+        <div class="stat-card orange"><div class="stat-icon">⏳</div><div class="stat-value" id="stat-pending">—</div><div class="stat-label">Pending</div></div>
+        <div class="stat-card red"><div class="stat-icon">🔴</div><div class="stat-value" id="stat-overdue">—</div><div class="stat-label">Overdue</div></div>
+        <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value" id="stat-replied">—</div><div class="stat-label">Replied</div></div>
+        <div class="stat-card blue"><div class="stat-icon">⚡</div><div class="stat-value" id="stat-due7">—</div><div class="stat-label">Due in 7 Days</div></div>
+        <div class="stat-card purple"><div class="stat-icon">✅</div><div class="stat-value" id="stat-tasks">—</div><div class="stat-label">Open Tasks</div></div>
+        <div class="stat-card teal"><div class="stat-icon">🗓️</div><div class="stat-value" id="stat-hearings">—</div><div class="stat-label">Hearings Scheduled</div></div>
+      </div>
+      <div class="two-col" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-header"><h3>⏰ Upcoming Due Dates</h3><button class="btn btn-outline btn-sm" onclick="showPage('notices')">View All</button></div>
+          <div id="upcoming-list"><div class="page-loading"><div class="loading"></div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>🔴 Overdue Notices</h3><span id="overdue-count" class="badge badge-danger">0</span></div>
+          <div id="overdue-list"><div class="page-loading"><div class="loading"></div></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>👥 Client-wise Summary</h3><a class="btn btn-outline btn-sm" href="/api/export/clients/excel" download>⬇️ Export</a></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Client</th><th>PAN</th><th>Category</th><th>CA</th><th>Total</th><th>Pending</th><th>Overdue</th><th>Action</th></tr></thead>
+          <tbody id="client-summary-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CLIENTS ═══ -->
+    <div class="page" id="page-clients">
+      <div class="page-header">
+        <div class="page-header-left"><h1>👥 Client Database</h1><p>Manage clients and IT portal credentials</p></div>
+        <div class="page-header-actions">
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-clients-input').click()">📥 Import</button>
+          <input type="file" id="import-clients-input" accept=".xlsx,.xls" style="display:none" onchange="importClients(this)"/>
+          <a class="btn btn-outline btn-sm" href="/api/export/clients/template" download>📋 Template</a>
+          <a class="btn btn-outline btn-sm" href="/api/export/clients/excel" download>⬇️ Export</a>
+          <button class="btn btn-gold" onclick="openClientModal()">+ Add Client</button>
+        </div>
+      </div>
+      <div class="filter-bar card">
+        <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="client-search" placeholder="Search name, PAN, email..." oninput="loadClients()" /></div>
+        <select class="form-select" id="client-cat-filter" onchange="loadClients()">
+          <option value="">All Categories</option><option>Individual</option><option>HUF</option><option>Firm</option><option>Company</option><option>Trust</option>
+        </select>
+      </div>
+      <div id="clients-content"><div class="page-loading"><div class="loading"></div><span>Loading clients...</span></div></div>
+    </div>
+
+    <!-- ═══ NOTICES ═══ -->
+    <div class="page" id="page-notices">
+      <div class="page-header">
+        <div class="page-header-left"><h1>📋 Notice Tracker</h1><p>Track all Income Tax notices and due dates</p></div>
+        <div class="page-header-actions">
+          <a class="btn btn-outline btn-sm" href="/api/export/notices/excel" download>⬇️ Export Excel</a>
+          <button class="btn btn-gold" onclick="openNoticeModal()">+ Add Notice</button>
+        </div>
+      </div>
+      <div class="filter-bar card">
+        <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="notice-search" placeholder="Search client, section, DIN..." oninput="loadNotices()" /></div>
+        <select class="form-select" id="notice-status-filter" onchange="loadNotices()"><option value="">All Status</option><option>Pending</option><option>Reply Filed</option><option>Hearing Scheduled</option><option>Closed</option></select>
+        <select class="form-select" id="notice-priority-filter" onchange="loadNotices()"><option value="">All Priority</option><option>High</option><option>Medium</option><option>Low</option></select>
+        <select class="form-select" id="notice-client-filter" onchange="loadNotices()"><option value="">All Clients</option></select>
+      </div>
+      <div id="notices-content"><div class="page-loading"><div class="loading"></div><span>Loading notices...</span></div></div>
+    </div>
+
+    <!-- ═══ REPLY GENERATOR ═══ -->
+    <div class="page" id="page-reply-generator">
+      <div class="page-header">
+        <div class="page-header-left"><h1>✍️ Reply Generator</h1><p>AI-powered professional Income Tax reply drafting</p></div>
+      </div>
+      <div class="two-col" style="align-items:start">
+        <div>
+          <div class="card">
+            <h3 class="card-title">📝 Reply Details</h3>
+            <div class="form-group"><label class="form-label">Client <span class="req">*</span></label><select class="form-select" id="reply-client" onchange="loadClientNoticesForReply()"><option value="">Select Client...</option></select></div>
+            <div class="form-group"><label class="form-label">Notice <span class="req">*</span></label><select class="form-select" id="reply-notice" onchange="onReplyNoticeChange()"><option value="">Select notice first...</option></select></div>
+            <div id="reply-notice-info" class="notice-info-box" style="display:none"></div>
+            <div class="form-group"><label class="form-label">Facts of the Case</label><textarea class="form-textarea" id="reply-facts" rows="5" placeholder="Describe the facts: background of transactions, reasons for discrepancy, what happened..."></textarea></div>
+            <div class="form-group"><label class="form-label">Legal Provisions to Cite</label><textarea class="form-textarea" id="reply-provisions" rows="3" placeholder="e.g. Section 148A(d), CBDT Circular 19/2019, CIT v. Max India Ltd. [2007]..."></textarea></div>
+            <div class="form-group"><label class="form-label">Client's Explanation</label><textarea class="form-textarea" id="reply-explanation" rows="3" placeholder="Client's version, what they want to convey..."></textarea></div>
+            <div class="form-group"><label class="form-label">Special Instructions for AI</label><textarea class="form-textarea" id="reply-remarks" rows="2" placeholder="e.g. Emphasize bona fide mistake, request personal hearing..."></textarea></div>
+            <div class="form-group">
+              <label class="form-label">Supporting Documents</label>
+              <div class="file-drop-zone" id="reply-docs-zone" onclick="document.getElementById('reply-docs').click()">
+                <input type="file" id="reply-docs" multiple accept=".pdf,.xlsx,.xls,.jpg,.jpeg,.png" onchange="showFileList(this,'reply-file-list')" />
+                <div class="drop-icon">📂</div>
+                <div class="drop-text">Click or drag & drop files</div>
+                <div class="drop-sub">PDF, Excel, Images (max 25MB each)</div>
+              </div>
+              <div class="file-list" id="reply-file-list"></div>
+            </div>
+            <button class="btn btn-gold btn-lg btn-full" id="generate-reply-btn" onclick="generateReply()">✨ Generate AI Reply</button>
+          </div>
+        </div>
+        <div>
+          <div class="card" id="reply-output-card" style="display:none">
+            <div class="card-header">
+              <h3>📄 Generated Reply</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-outline btn-sm" onclick="copyReply()">📋 Copy</button>
+                <button class="btn btn-outline btn-sm" id="save-reply-btn">💾 Save</button>
+                <button class="btn btn-success btn-sm" id="download-reply-pdf-btn">⬇️ Download</button>
+              </div>
+            </div>
+            <div class="reply-output" id="reply-output" contenteditable="true"></div>
+            <div id="reply-ai-source" class="ai-source-tag"></div>
+          </div>
+          <div class="card" id="reply-history-card" style="margin-top:16px">
+            <h3 class="card-title">🕐 Reply History</h3>
+            <div id="reply-history-list"><p class="text-muted">Select a notice to see version history</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DOCUMENTS ═══ -->
+    <div class="page" id="page-documents">
+      <div class="page-header">
+        <div class="page-header-left"><h1>📁 Document Manager</h1><p>Upload and manage all client documents</p></div>
+      </div>
+      <div class="filter-bar card">
+        <select class="form-select" style="flex:1;max-width:350px" id="doc-client-select" onchange="loadClientDocs()"><option value="">Select Client to view documents...</option></select>
+        <button class="btn btn-outline btn-sm" id="doc-zip-btn" style="display:none" onclick="downloadClientZip()">📥 Download All as ZIP</button>
+      </div>
+      <div id="documents-content"><div class="empty-state"><div class="empty-icon">📁</div><h3>Select a Client</h3><p>Choose a client above to view and manage their documents</p></div></div>
+    </div>
+
+    <!-- ═══ TASKS ═══ -->
+    <div class="page" id="page-tasks">
+      <div class="page-header">
+        <div class="page-header-left"><h1>✅ Task Allocation</h1><p>Assign and track firm tasks across staff and articles</p></div>
+        <div class="page-header-actions">
+          <select class="form-select btn-sm" id="task-filter-staff" onchange="loadTasks()" style="width:160px"><option value="">All Staff</option></select>
+          <select class="form-select btn-sm" id="task-filter-status" onchange="loadTasks()" style="width:130px"><option value="">All Status</option><option>Pending</option><option>In Progress</option><option>Done</option></select>
+          <button class="btn btn-gold btn-sm" onclick="openTaskModal()">+ Add Task</button>
+        </div>
+      </div>
+      <div id="tasks-content"><div class="page-loading"><div class="loading"></div><span>Loading tasks...</span></div></div>
+    </div>
+
+    <!-- ═══ STAFF ═══ -->
+    <div class="page" id="page-staff">
+      <div class="page-header">
+        <div class="page-header-left"><h1>🧑‍💼 Staff Management</h1><p>Manage your team — CAs, Articles, Assistants</p></div>
+        <div class="page-header-actions"><button class="btn btn-gold" onclick="openStaffModal()">+ Add Staff</button></div>
+      </div>
+      <div id="staff-content"><div class="page-loading"><div class="loading"></div><span>Loading staff...</span></div></div>
+    </div>
+
+    <!-- ═══ HEARINGS ═══ -->
+    <div class="page" id="page-hearings">
+      <div class="page-header">
+        <div class="page-header-left"><h1>🗓️ Hearing Calendar</h1><p>Schedule and track ITAT, HC, CIT(A) hearings</p></div>
+        <div class="page-header-actions">
+          <select class="form-select btn-sm" id="hearing-status-filter" onchange="loadHearings()" style="width:140px"><option value="">All Status</option><option>Scheduled</option><option>Completed</option><option>Adjourned</option></select>
+          <button class="btn btn-gold" onclick="openHearingModal()">+ Schedule Hearing</button>
+        </div>
+      </div>
+      <div id="hearings-content"><div class="page-loading"><div class="loading"></div><span>Loading hearings...</span></div></div>
+    </div>
+
+    <!-- ═══ LIBRARY ═══ -->
+    <div class="page" id="page-library">
+      <div class="page-header">
+        <div class="page-header-left"><h1>📚 IT Law Library</h1><p>Income Tax Act, CBDT circulars, case laws, notice guides</p></div>
+        <div class="page-header-actions"><button class="btn btn-gold" onclick="openLibraryModal()">+ Add Entry</button></div>
+      </div>
+      <div class="filter-bar card">
+        <div class="search-bar"><span class="search-icon">🔍</span><input type="text" id="library-search" placeholder="Search section, keyword, case law..." oninput="loadLibrary()" /></div>
+        <select class="form-select" id="library-cat-filter" onchange="loadLibrary()">
+          <option value="">All Categories</option><option>Notice Explanation</option><option>Penalty Reference</option><option>CBDT Circulars</option><option>Case Laws</option><option>IT Act Sections</option><option>Other</option>
+        </select>
+      </div>
+      <div id="library-content"><div class="page-loading"><div class="loading"></div><span>Loading library...</span></div></div>
+    </div>
+
+    <!-- ═══ PENALTIES ═══ -->
+    <div class="page" id="page-penalties">
+      <div class="page-header">
+        <div class="page-header-left"><h1>⚠️ Penalty Reference Table</h1><p>Penalties for non-compliance — Income Tax Act, 1961</p></div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Section</th><th>Penalty Amount</th><th>Trigger Condition</th><th>Defense Points</th></tr></thead>
+            <tbody>
+              <tr><td><span class="section-tag">271(1)(b)</span></td><td class="penalty-amt">₹10,000 per default</td><td>Non-compliance with notice u/s 142(1) or 143(2)</td><td>Show reasonable cause; document compliance attempts</td></tr>
+              <tr><td><span class="section-tag">271(1)(c)</span></td><td class="penalty-amt">100%–300% of tax</td><td>Concealment of income / inaccurate particulars</td><td>Bona fide mistake; full disclosure; reliance on legal advice</td></tr>
+              <tr><td><span class="section-tag">271A</span></td><td class="penalty-amt">₹25,000</td><td>Failure to maintain books of accounts u/s 44AA</td><td>Reasonable cause; books maintained in different form</td></tr>
+              <tr><td><span class="section-tag">271B</span></td><td class="penalty-amt">0.5% of turnover (max ₹1.5L)</td><td>Failure to get accounts audited u/s 44AB</td><td>Reasonable cause; audit completed but delayed</td></tr>
+              <tr><td><span class="section-tag">271H</span></td><td class="penalty-amt">₹10,000–₹1,00,000</td><td>TDS return not filed / incorrect TDS return</td><td>TDS paid; late fee u/s 234E already deposited</td></tr>
+              <tr><td><span class="section-tag">272A</span></td><td class="penalty-amt">₹10,000 per default</td><td>Non-compliance with summons u/s 131</td><td>Reasonable cause; adjournment sought in writing</td></tr>
+              <tr><td><span class="section-tag">272A(2)</span></td><td class="penalty-amt">₹10,000 per default</td><td>Failure to furnish info u/s 133(6)</td><td>Required data unavailable; compliance within time</td></tr>
+              <tr><td><span class="section-tag">234A</span></td><td class="interest-amt">1% per month on tax due</td><td>Delay in filing return beyond due date</td><td>CBDT waiver u/s 119(2)(b) in genuine hardship</td></tr>
+              <tr><td><span class="section-tag">234B</span></td><td class="interest-amt">1% per month on shortfall</td><td>Advance tax paid &lt; 90% of assessed tax</td><td>Tax covered by TDS; income not received till year-end</td></tr>
+              <tr><td><span class="section-tag">234C</span></td><td class="interest-amt">1% per month per installment</td><td>Advance tax installment shortfall</td><td>Capital gains / casual income received late in year</td></tr>
+              <tr><td><span class="section-tag">220(2)</span></td><td class="interest-amt">1% per month on demand</td><td>Non-payment of demand u/s 156 within 30 days</td><td>Stay application filed; 20% payment made per Instruction 1914</td></tr>
+              <tr><td><span class="section-tag">270A</span></td><td class="penalty-amt">50% of tax (under-reporting) / 200% (misreporting)</td><td>Under-reported income (replaces 271(1)(c) for AY 2017-18+)</td><td>Show disclosed income; bona fide claim; reasonable cause</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SETTINGS ═══ -->
+    <div class="page" id="page-settings">
+      <div class="page-header"><div class="page-header-left"><h1>⚙️ Settings</h1><p>Configure office details, AI integration, and backup</p></div></div>
+      <div class="two-col" style="align-items:start">
+        <div>
+          <div class="card">
+            <h3 class="card-title">🏢 Office Letterhead</h3>
+            <div class="form-group"><label class="form-label">Firm / Office Name</label><input type="text" id="s-office-name" class="form-input" placeholder="ABC & Associates" /></div>
+            <div class="form-group"><label class="form-label">Office Address</label><textarea class="form-textarea" id="s-office-address" rows="3" placeholder="123 MG Road, Mumbai - 400001"></textarea></div>
+            <div class="form-group"><label class="form-label">CA Membership No.</label><input type="text" id="s-ca-membership" class="form-input" placeholder="XXXXXX" /></div>
+            <button class="btn btn-primary" onclick="saveSettings()">💾 Save Office Details</button>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <h3 class="card-title">💾 Database Backup</h3>
+            <p class="text-muted" style="margin-bottom:16px;font-size:13px">Download a backup of your entire database at any time.</p>
+            <a class="btn btn-outline" href="/data/litigation.db" download="it_litigation_backup.db">⬇️ Download Database Backup</a>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <h3 class="card-title">🤖 AI Configuration</h3>
+            <div id="settings-ai-status" class="info-banner" style="display:none"><span>ℹ️</span> Configure an AI API key to enable AI-powered reply generation.</div>
+            <div class="form-group">
+              <label class="form-label">AI Provider</label>
+              <select class="form-select" id="s-ai-provider">
+                <option value="gemini">Google Gemini 1.5 Flash (Free tier available)</option>
+                <option value="openai">OpenAI GPT-4o</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Gemini API Key</label>
+              <div class="password-field"><input type="password" id="s-gemini-key" class="form-input" placeholder="Enter new key to update" /><button class="password-toggle" onclick="togglePwd('s-gemini-key')">👁</button></div>
+              <div class="form-hint">Get free key at <a href="https://makersuite.google.com/app/apikey" target="_blank" class="link-accent">Google AI Studio</a></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">OpenAI API Key</label>
+              <div class="password-field"><input type="password" id="s-openai-key" class="form-input" placeholder="Enter new key to update" /><button class="password-toggle" onclick="togglePwd('s-openai-key')">👁</button></div>
+            </div>
+            <button class="btn btn-primary" onclick="saveAISettings()">💾 Save AI Settings</button>
+            <div id="s-ai-key-status" style="margin-top:12px;font-size:13px;color:var(--text3)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-content -->
+</div><!-- /main -->
+
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- Client Modal -->
+<div class="modal-overlay" id="client-modal-overlay" onclick="closeModal('client-modal-overlay')">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-title" id="client-modal-title">Add New Client</div><button class="modal-close" onclick="closeModal('client-modal-overlay')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="client-id" />
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full Name <span class="req">*</span></label><input type="text" id="c-name" class="form-input" placeholder="As per PAN card" /></div>
+        <div class="form-group"><label class="form-label">PAN <span class="req">*</span></label><input type="text" id="c-pan" class="form-input" placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="c-category"><option>Individual</option><option>HUF</option><option>Firm</option><option>Company</option><option>Trust</option></select></div>
+        <div class="form-group"><label class="form-label">CA Assigned</label><input type="text" id="c-ca" class="form-input" placeholder="CA Name" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Email</label><input type="email" id="c-email" class="form-input" placeholder="client@email.com" /></div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="text" id="c-phone" class="form-input" placeholder="9999999999" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">GSTIN</label><input type="text" id="c-gstin" class="form-input" placeholder="If applicable" /></div>
+        <div class="form-group"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Address</label><textarea class="form-textarea" id="c-address" rows="2" placeholder="Client address"></textarea></div>
+      <div class="section-divider">🔒 IT Portal Credentials (stored AES-256 encrypted)</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">IT Portal Username</label><input type="text" id="c-it-user" class="form-input" placeholder="PAN/email on IT portal" /></div>
+        <div class="form-group"><label class="form-label">IT Portal Password</label>
+          <div class="password-field"><input type="password" id="c-it-pass" class="form-input" placeholder="Enter password" /><button class="password-toggle" onclick="togglePwd('c-it-pass')">👁</button></div>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="c-notes" rows="2" placeholder="Internal notes..."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('client-modal-overlay')">Cancel</button><button class="btn btn-gold" onclick="saveClient()">💾 Save Client</button></div>
+  </div>
+</div>
+
+<!-- Notice Modal -->
+<div class="modal-overlay" id="notice-modal-overlay" onclick="closeModal('notice-modal-overlay')">
+  <div class="modal modal-xl" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-title" id="notice-modal-title">Add Notice</div><button class="modal-close" onclick="closeModal('notice-modal-overlay')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="notice-id" />
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Client <span class="req">*</span></label><select class="form-select" id="n-client"><option value="">Select client...</option></select></div>
+        <div class="form-group"><label class="form-label">Notice Type <span class="req">*</span></label>
+          <select class="form-select" id="n-type" onchange="onNoticeTypeChange()">
+            <option value="">Select type...</option>
+            <option>Section 143(1) Intimation</option><option>Section 143(2) Scrutiny</option>
+            <option>Section 143(3) Assessment</option><option>Section 144 Best Judgment</option>
+            <option>Section 148 Reassessment</option><option>Section 148A Show Cause</option>
+            <option>Section 131 Summons</option><option>Section 133(6) Information</option>
+            <option>Section 142(1) Enquiry</option><option>Section 156 Demand</option>
+            <option>Section 245 Refund Adjustment</option><option>Section 263 Revision CIT</option>
+            <option>Section 264 Revision Taxpayer</option><option>Section 271 Penalty Proceedings</option>
+            <option>Section 270A Penalty Under-reporting</option><option>Section 68 Unexplained Credit</option>
+            <option>CIT(A) Appeal Hearing</option><option>ITAT Hearing</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Section</label><input type="text" id="n-section" class="form-input" placeholder="e.g. 148A, 143(1)" /></div>
+        <div class="form-group"><label class="form-label">Assessment Year</label>
+          <select class="form-select" id="n-ay">
+            <option value="">Select AY...</option>
+            <option>2025-26</option><option>2024-25</option><option>2023-24</option><option>2022-23</option>
+            <option>2021-22</option><option>2020-21</option><option>2019-20</option><option>2018-19</option>
+            <option>2017-18</option><option>2016-17</option><option>2015-16</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Notice Date</label><input type="date" id="n-date" class="form-input" /></div>
+        <div class="form-group"><label class="form-label">Due Date for Reply <span class="req">*</span></label><input type="date" id="n-due" class="form-input" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">DIN / Reference No.</label><input type="text" id="n-din" class="form-input" placeholder="Document Identification Number" /></div>
+        <div class="form-group"><label class="form-label">Issuing Authority</label><input type="text" id="n-authority" class="form-input" placeholder="AO Name / Ward No." /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="n-status"><option>Pending</option><option>Reply Filed</option><option>Hearing Scheduled</option><option>Closed</option></select></div>
+        <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="n-priority"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Assigned To</label><input type="text" id="n-assigned" class="form-input" placeholder="CA / Staff name" /></div>
+      <div class="form-group"><label class="form-label">Brief Description</label><textarea class="form-textarea" id="n-desc" rows="2" placeholder="Short description of the notice..."></textarea></div>
+      <div class="form-group"><label class="form-label">Internal Remarks</label><textarea class="form-textarea" id="n-remarks" rows="2" placeholder="Internal notes..."></textarea></div>
+      <div class="form-group">
+        <label class="form-label">Upload Notice PDF</label>
+        <div class="file-drop-zone" id="notice-upload-zone" onclick="document.getElementById('n-file').click()">
+          <input type="file" id="n-file" accept=".pdf,.jpg,.jpeg,.png" onchange="showSingleFile(this,'notice-file-preview')" />
+          <div class="drop-icon">📄</div>
+          <div class="drop-text">Click to upload notice PDF</div>
+          <div class="drop-sub">PDF, JPG, PNG (max 25MB)</div>
+        </div>
+        <div id="notice-file-preview"></div>
+      </div>
+      <div id="notice-explanation-box" style="display:none" class="lib-preview-box">
+        <div class="lib-preview-title">📖 Notice Explanation (from Library)</div>
+        <div id="notice-explanation-text" class="lib-preview-text"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('notice-modal-overlay')">Cancel</button><button class="btn btn-gold" onclick="saveNotice()">💾 Save Notice</button></div>
+  </div>
+</div>
+
+<!-- Notice Detail Modal -->
+<div class="modal-overlay" id="notice-detail-overlay" onclick="closeModal('notice-detail-overlay')">
+  <div class="modal modal-xl" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-title" id="nd-title">Notice Details</div><button class="modal-close" onclick="closeModal('notice-detail-overlay')">✕</button></div>
+    <div class="modal-body" id="nd-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('notice-detail-overlay')">Close</button>
+      <button class="btn btn-outline" id="nd-edit-btn">✏️ Edit</button>
+      <button class="btn btn-outline" id="nd-task-btn">✅ Add Task</button>
+      <button class="btn btn-outline" id="nd-hearing-btn">🗓️ Schedule Hearing</button>
+      <button class="btn btn-gold" id="nd-reply-btn">✍️ Generate Reply</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="task-modal-overlay" onclick="closeModal('task-modal-overlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-title" id="task-modal-title">Add Task</div><button class="modal-close" onclick="closeModal('task-modal-overlay')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="task-id" />
+      <div class="form-group"><label class="form-label">Task Title <span class="req">*</span></label><input type="text" id="t-title" class="form-input" placeholder="e.g. Prepare reply for Ramesh Kumar 148A" /></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Client</label><select class="form-select" id="t-client"><option value="">None</option></select></div>
+        <div class="form-group"><label class="form-label">Linked Notice</label><select class="form-select" id="t-notice"><option value="">None</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="t-desc" rows="3" placeholder="Task details..."></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Assign To</label><select class="form-select" id="t-staff"><option value="">Unassigned</option></select></div>
+        <div class="form-group"><label class="form-label">Due Date</label><input type="date" id="t-due" class="form-input" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="t-priority"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="t-status"><option>Pending</option><option>In Progress</option><option>Done</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('task-modal-overlay')">Cancel</button><button class="btn btn-gold" onclick="saveTask()">💾 Save Task</button></div>
+  </div>
+</div>
+
+<!-- Staff Modal -->
+<div class="modal-overlay" id="staff-modal-overlay" onclick="closeModal('staff-modal-overlay')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-title" id="staff-modal-title">Add Staff Member</div><button class="modal-close" onclick="closeModal('staff-modal-overlay')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="staff-id" />
+      <div class="form-group"><label class="form-label">Name <span class="req">*</span></label><input type="text" id="st-name" class="form-input" placeholder="Full Name" /></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Role</label><select class="form-select" id="st-role"><option>Admin</option><option>CA</option><option>Article</option><option>Assistant</option></select></div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="text" id="st-phone" class="form-input" placeholder="Phone number" /></div>
+      </div>
+      <div class="form-group"><label class="form-label">Email</label><input type="email" id="st-email" class="form-input" placeholder="email@firm.com" /></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('staff-modal-overlay')">Cancel</button><button class="btn btn-gold" onclick="saveStaff()">💾 Save</button></div>
+  </div>
+</div>
+
+<!-- Hearing Modal -->
+<div class="modal-overlay" id="hearing-modal-overlay" onclick="closeModal('hearing-modal-overlay')">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-title" id="hearing-modal-title">Schedule Hearing</div><button class="modal-close" onclick="closeModal('hearing-modal-overlay')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="hearing-id" />
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Client <span class="req">*</span></label><select class="form-select" id="h-client" onchange="loadClientNoticesForHearing()"><option value="">Select client...</option></select></div>
+        <div class="form-group"><label class="form-label">Linked Notice</label><select class="form-select" id="h-notice"><option value="">Select notice (optional)...</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Hearing Date <span class="req">*</span></label><input type="date" id="h-date" class="form-input" /></div>
+        <div class="form-group"><label class="form-label">Time</label><input type="time" id="h-time" class="form-input" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Authority / Forum</label><input type="text" id="h-authority" class="form-input" placeholder="e.g. CIT(A), ITAT Delhi" /></div>
+        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="h-status"><option>Scheduled</option><option>Completed</option><option>Adjourned</option><option>Cancelled</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Venue</label><input type="text" id="h-venue" class="form-input" placeholder="Room No., Bench, etc." /></div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="h-notes" rows="3" placeholder="Hearing notes, submission instructions..."></textarea></div>
+      <div class="form-group"><label class="form-label">Outcome (after hearing)</label><textarea class="form-textarea" id="h-outcome" rows="2" placeholder="Record outcome after hearing..."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('hearing-modal-overlay')">Cancel</button><button class="btn btn-gold" onclick="saveHearing()">💾 Save Hearing</button></div>
+  </div>
+</div>
+
+<!-- Library Modal -->
+<div class="modal-overlay" id="library-modal-overlay" onclick="closeModal('library-modal-overlay')">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-title" id="library-modal-title">Add Library Entry</div><button class="modal-close" onclick="closeModal('library-modal-overlay')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="lib-id" />
+      <div class="form-group"><label class="form-label">Title <span class="req">*</span></label><input type="text" id="lib-title" class="form-input" placeholder="e.g. Section 263 - Revision by CIT" /></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="lib-cat"><option>Notice Explanation</option><option>Penalty Reference</option><option>CBDT Circulars</option><option>Case Laws</option><option>IT Act Sections</option><option>Other</option></select></div>
+        <div class="form-group"><label class="form-label">Section Reference</label><input type="text" id="lib-section" class="form-input" placeholder="e.g. 263, 271(1)(c)" /></div>
+      </div>
+      <div class="form-group"><label class="form-label">Content <span class="req">*</span></label><textarea class="form-textarea" id="lib-content" rows="8" placeholder="Full text of provision, explanation, case law summary..."></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tags</label><input type="text" id="lib-tags" class="form-input" placeholder="comma, separated, keywords" /></div>
+        <div class="form-group"><label class="form-label">Source</label><input type="text" id="lib-source" class="form-input" placeholder="e.g. Income Tax Act 1961, Taxmann" /></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('library-modal-overlay')">Cancel</button><button class="btn btn-gold" onclick="saveLibraryEntry()">💾 Save Entry</button></div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-overlay" id="confirm-modal-overlay" onclick="closeModal('confirm-modal-overlay')">
+  <div class="modal" style="max-width:380px" onclick="event.stopPropagation()">
+    <div class="modal-header"><div class="modal-title">Confirm Delete</div><button class="modal-close" onclick="closeModal('confirm-modal-overlay')">✕</button></div>
+    <div class="modal-body"><p id="confirm-msg" class="text-muted" style="font-size:15px"></p></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('confirm-modal-overlay')">Cancel</button><button class="btn btn-danger" id="confirm-ok-btn">Delete</button></div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

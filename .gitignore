@@ -1,0 +1,20 @@
+# ─── Node & npm ───────────────────────────────
+node_modules/
+npm-debug.log*
+
+# ─── Database (Railway volume handles this) ────
+# data/litigation.db  ← don't ignore, let railway handle via volume
+
+# ─── Uploads (use Railway volume or cloud storage) ─
+uploads/
+
+# ─── Environment ──────────────────────────────
+.env
+.env.local
+
+# ─── OS ───────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Dev ──────────────────────────────────────
+*.log
